@@ -10,10 +10,10 @@ import numpy as np
 device = "cpu"  # Use CPU for training (PPO can be slow on GPU for small environments)
 
 # Training hyperparameters
-learning_rate = 0.01        # How fast to learn (higher = faster but less stable)
+learning_rate = 0.1        # How fast to learn (higher = faster but less stable)
 n_episodes = 10_000        # Number of episodes to practice
 start_epsilon = 1.0         # Start with 100% random actions
-epsilon_decay = start_epsilon / (n_episodes / 2)  # Reduce exploration over time
+epsilon_decay = start_epsilon / (2*n_episodes / 5)  # Reduce exploration over time
 final_epsilon = 0.1         # Always keep some exploration
 demo_episodes = 5           # Number of visual episodes to show after training
 
@@ -35,7 +35,7 @@ def train_agent():
     agent.learn(total_timesteps=10000)
 
     # 4. Save and Test
-    agent.save("ppo_cartpole")
+    # agent.save("ppo_cartpole")
     # Reset environment to start a new episode
     observation, info = env.reset()
     # observation: cart position, cart velocity, pole angle, pole angular velocity.
@@ -123,3 +123,5 @@ def plot_rewards(agent, rewards):
 if __name__ == "__main__":
     agent = train_agent()
     plot_rewards(agent, recent_rewards)
+    print(f"\nVisual demos completed. Max Rewards: {max(recent_rewards)},\
+           Min Rewards: {min(recent_rewards)}, Avg Rewards: {np.mean(recent_rewards):.2f}")

@@ -89,12 +89,12 @@ class CartPoleAgent:
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
         
 # Training hyperparameters
-learning_rate = 0.01        # How fast to learn (higher = faster but less stable)
+learning_rate = 0.1        # How fast to learn (higher = faster but less stable)
 n_episodes = 10_000        # Number of episodes to practice
 start_epsilon = 1.0         # Start with 100% random actions
-epsilon_decay = start_epsilon / (n_episodes / 2)  # Reduce exploration over time
+epsilon_decay = start_epsilon / (2*n_episodes / 5)  # Reduce exploration over time
 final_epsilon = 0.1         # Always keep some exploration
-demo_episodes = 5           # Number of visual episodes to show after training
+demo_episodes = 15           # Number of visual episodes to show after training
 
 max_steps_per_episode = 500
 success_window = 100
@@ -152,8 +152,40 @@ def train_agent():
     env.close()
     return agent
 
+# Test the trained agent
+def test_agent(agent, env, num_episodes=1000):
+    """Test agent performance without learning or exploration."""
+    total_rewards = []
 
-def show_top_q_values(agent, n=10):
+    # Temporarily disable exploration for testing
+    old_epsilon = agent.epsilon
+    agent.epsilon = 0.0  # Pure exploitation
+
+    for _ in range(num_episodes):
+        obs, info = env.reset()
+        episode_reward = 0
+        done = False
+
+        while not done:
+            action = agent.get_action(obs)
+            obs, reward, terminated, truncated, info = env.step(action)
+            episode_reward += reward
+            done = terminated or truncated
+
+        total_rewards.append(episode_reward)
+
+    # Restore original epsilon
+    agent.epsilon = old_epsilon
+
+    win_rate = np.mean(np.array(total_rewards) > 0)
+    average_reward = np.mean(total_rewards)
+
+    print(f"Test Results over {num_episodes} episodes:")
+    print(f"Win Rate: {win_rate:.1%}")
+    print(f"Average Reward: {average_reward:.3f}")
+    print(f"Standard Deviation: {np.std(total_rewards):.3f}")
+
+def show_top_q_values(agent, n=200):
     ranked_states = sorted(
         agent.q_values.items(),
         key=lambda item: np.max(item[1]),
@@ -174,7 +206,7 @@ def show_top_q_values(agent, n=10):
         )
 
 
-def run_visual_demo(agent, delay=0.02):
+def test_agent(agent, delay=0.02):
     demo_env = gym.make(
         "CartPole-v1",
         render_mode="human",
@@ -216,14 +248,19 @@ def run_visual_demo(agent, delay=0.02):
         agent.epsilon = old_epsilon
         demo_env.close()
 
+    return total_reward
+
 
 def main():
     agent = train_agent()
     show_top_q_values(agent, n=10)
-
+    rewards = []
     for demo in range(demo_episodes):
         print(f"\nVisual sample {demo + 1}/{demo_episodes}")
-        run_visual_demo(agent)
+        reward = test_agent(agent)
+        rewards.append(reward)
+
+    print(f"\nTest completed. Max Rewards: {max(rewards)}, Min Rewards: {min(rewards)}, Avg Rewards: {np.mean(rewards):.2f}")
 
 if __name__ == "__main__":
     main()
